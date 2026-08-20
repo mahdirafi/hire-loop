@@ -6,8 +6,7 @@ import { usePathname } from "next/navigation";
 import { Button } from "@heroui/react";
 import { Bars, Xmark, Briefcase } from "@gravity-ui/icons";
 import { useSession, signOut } from "@/lib/auth-client";
-
-// ওয়েবসাইটের রাউটসমূহ
+ 
 const NAV_LINKS = [
   { label: "Browse Jobs", href: "/jobs" },
   { label: "Company", href: "/company" },
@@ -114,7 +113,7 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* মোবাইল মেনু টগল বাটন */}
+          {/* Mobile menus toggle*/}
           <button
             type="button"
             onClick={() => setIsOpen((prev) => !prev)}

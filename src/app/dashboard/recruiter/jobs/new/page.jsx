@@ -1,283 +1,359 @@
 "use client";
+import React, { useState } from "react";
+import {
+    Form,
+    Fieldset,
+    TextField,
+    Label,
+    Input,
+    TextArea,
+    FieldError,
+    Select,
+    ListBox,
+    Switch,
+    Button,
+} from "@heroui/react";
+import { Briefcase, Globe } from "@gravity-ui/icons";
+import { createJob } from "@/lib/action/jobs";
+import { redirect } from "next/navigation";
+import toast from "react-hot-toast";
+ 
 
-import { useState } from "react";
-import { FiUploadCloud, FiGlobe, FiCalendar, FiDollarSign } from "react-icons/fi";
+export default function PostJobPage() {
+    const [mockCompany] = useState({
+        name: "Acme Corp (Auto-filled)",
+        id: "company_123",
+        isApproved: true,
+    });
 
-export default function postJobs() {
-  const [logoPreview, setLogoPreview] = useState(null);
-  const [isRemote, setIsRemote] = useState(false);
+    const [isRemote, setIsRemote] = useState(false);
+    const [errors, setErrors] = useState({});
 
-  const handleLogoChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setLogoPreview(URL.createObjectURL(file));
-    }
-  };
+    const handleSubmit = async (e) => {
+        e.preventDefault();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const data = Object.fromEntries(formData.entries());
-    data.isRemote = isRemote;
-    console.log("Register Company Data:", data);
-  };
+        if (!mockCompany.isApproved) {
+            alert("Your company profile must be approved before you can post jobs.");
+            return;
+        }
 
-  return (
-    <div className="w-full max-w-2xl mx-auto my-8 px-4">
-      {/* Form Card Container */}
-      <div className="rounded-xl border border-neutral-800 bg-[#121212] text-neutral-200 shadow-2xl overflow-hidden">
-        
-        {/* Header */}
-        <div className="border-b border-neutral-800 p-6">
-          <h2 className="text-xl font-semibold text-white">Post Jobs</h2>
-          <p className="mt-1 text-sm text-neutral-400">
-            Enter your job details to start hiring on HireLoop.
-          </p>
+        const formData = new FormData(e.currentTarget);
+        const data = Object.fromEntries(formData.entries());
+
+        const newErrors = {};
+        if (!data.jobTitle) newErrors.jobTitle = "Job title is required";
+        if (!data.jobCategory) newErrors.jobCategory = "Job category is required";
+        if (!data.jobType) newErrors.jobType = "Job type is required";
+        if (!data.minSalary) newErrors.minSalary = "Minimum salary is required";
+        if (!data.maxSalary) newErrors.maxSalary = "Maximum salary is required";
+        if (!isRemote && !data.location) newErrors.location = "Location is required for non-remote roles";
+        if (!data.deadline) newErrors.deadline = "Application deadline is required";
+        if (!data.responsibilities) newErrors.responsibilities = "Responsibilities are required";
+        if (!data.requirements) newErrors.requirements = "Requirements are required";
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+
+        setErrors({});
+
+        const payload = {
+            ...data,
+            isRemote,
+            companyId: mockCompany.id,
+            status: "active",
+            isPubliclyVisible: true,
+        };
+
+        try {
+            const res = await createJob(payload);
+            if (res.insertedId) {
+                toast.success("Job posted successfully!");
+                e.target.reset();
+                setIsRemote(false);
+                redirect("/dashboard/recruiter/jobs");
+            }
+        } catch (error) {
+            console.error("Error posting job:", error);
+            toast.error("Failed to post job");
+        }
+    };
+
+    const textInputClass = "w-full text-white bg-[#1c1c1e] border border-zinc-800 hover:bg-[#242426] focus:border-zinc-600 rounded-lg h-12 px-3 text-sm placeholder:text-zinc-600 outline-none transition-all";
+    const textAreaClass = "w-full text-white bg-[#1c1c1e] border border-zinc-800 hover:bg-[#242426] focus:border-zinc-600 rounded-lg p-3 text-sm placeholder:text-zinc-600 outline-none transition-all";
+
+    return (
+        <div className="min-h-screen bg-[#0d0d0e] text-white py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-3xl mx-auto bg-[#121214] border border-zinc-900 rounded-xl p-8 shadow-2xl">
+                <div className="border-b border-zinc-800 pb-6 mb-8">
+                    <h1 className="text-2xl font-semibold tracking-tight">Post a New Job</h1>
+                    <p className="text-zinc-400 text-sm mt-1">
+                        Fill out the details below to publish your open position.
+                    </p>
+                    <div className="mt-4 inline-flex items-center gap-2 bg-zinc-900/50 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-400">
+                        <Briefcase size={14} className="text-zinc-500" />
+                        Posting as: <span className="font-semibold text-zinc-300">{mockCompany.name}</span>
+                        <span className="text-emerald-500 font-medium bg-emerald-950/30 px-1.5 py-0.5 rounded border border-emerald-900/50">Approved</span>
+                    </div>
+                </div>
+
+                <Form onSubmit={handleSubmit} className="space-y-8">
+                    {/* Section: 1 Job Information */}
+                    <Fieldset className="space-y-6 w-full">
+                        <legend className="text-lg font-medium text-zinc-300 border-b border-zinc-900 w-full pb-2 mb-2">
+                            Job Information
+                        </legend>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Job Title */}
+                            <TextField 
+                                className="flex flex-col gap-1 w-full"
+                                isInvalid={!!errors.jobTitle}
+                            >
+                                <Label className="text-zinc-400 font-medium text-sm">Job Title</Label>
+                                <Input 
+                                    name="jobTitle" 
+                                    placeholder="e.g. Senior Frontend Engineer" 
+                                    className={textInputClass}
+                                />
+                                {errors.jobTitle && <FieldError className="text-xs text-danger mt-1">{errors.jobTitle}</FieldError>}
+                            </TextField>
+
+                            {/* Job Category */}
+                            <Select 
+                                name="jobCategory"
+                                className="w-full"
+                                isInvalid={!!errors.jobCategory}
+                            >
+                                <Label className="text-zinc-400 font-medium text-sm mb-1 block">Job Category</Label>
+                                <Select.Trigger className="w-full flex items-center justify-between bg-[#1c1c1e] border border-zinc-800 hover:bg-[#242426] h-12 rounded-lg px-3 text-white transition-all text-sm outline-none data-[focused=true]:border-zinc-600">
+                                    <Select.Value placeholder="Select category" />
+                                    <Select.Indicator aria-hidden="true" />
+                                </Select.Trigger>
+                                {errors.jobCategory && <span className="text-xs text-danger mt-1">{errors.jobCategory}</span>}
+                                <Select.Popover className="bg-[#1c1c1e] border border-zinc-800 text-white rounded-lg shadow-xl p-1">
+                                    <ListBox className="outline-none">
+                                        <ListBox.Item id="technology" textValue="Technology" className="flex items-center justify-between p-2 rounded-md hover:bg-zinc-800 cursor-pointer text-sm text-zinc-200 outline-none data-[focused=true]:bg-zinc-800">
+                                            Technology
+                                        </ListBox.Item>
+                                        <ListBox.Item id="design" textValue="Design" className="flex items-center justify-between p-2 rounded-md hover:bg-zinc-800 cursor-pointer text-sm text-zinc-200 outline-none data-[focused=true]:bg-zinc-800">
+                                            Design
+                                        </ListBox.Item>
+                                        <ListBox.Item id="marketing" textValue="Marketing" className="flex items-center justify-between p-2 rounded-md hover:bg-zinc-800 cursor-pointer text-sm text-zinc-200 outline-none data-[focused=true]:bg-zinc-800">
+                                            Marketing
+                                        </ListBox.Item>
+                                        <ListBox.Item id="sales" textValue="Sales" className="flex items-center justify-between p-2 rounded-md hover:bg-zinc-800 cursor-pointer text-sm text-zinc-200 outline-none data-[focused=true]:bg-zinc-800">
+                                            Sales
+                                        </ListBox.Item>
+                                    </ListBox>
+                                </Select.Popover>
+                            </Select>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Job Type */}
+                            <Select 
+                                name="jobType"
+                                className="w-full"
+                                isInvalid={!!errors.jobType}
+                            >
+                                <Label className="text-zinc-400 font-medium text-sm mb-1 block">Job Type</Label>
+                                <Select.Trigger className="w-full flex items-center justify-between bg-[#1c1c1e] border border-zinc-800 hover:bg-[#242426] h-12 rounded-lg px-3 text-white transition-all text-sm outline-none data-[focused=true]:border-zinc-600">
+                                    <Select.Value placeholder="Select job type" />
+                                    <Select.Indicator aria-hidden="true" />
+                                </Select.Trigger>
+                                {errors.jobType && <span className="text-xs text-danger mt-1">{errors.jobType}</span>}
+                                <Select.Popover className="bg-[#1c1c1e] border border-zinc-800 text-white rounded-lg shadow-xl p-1">
+                                    <ListBox className="outline-none">
+                                        <ListBox.Item id="full-time" textValue="Full-time" className="flex items-center justify-between p-2 rounded-md hover:bg-zinc-800 cursor-pointer text-sm text-zinc-200 outline-none data-[focused=true]:bg-zinc-800">
+                                            Full-time
+                                        </ListBox.Item>
+                                        <ListBox.Item id="part-time" textValue="Part-time" className="flex items-center justify-between p-2 rounded-md hover:bg-zinc-800 cursor-pointer text-sm text-zinc-200 outline-none data-[focused=true]:bg-zinc-800">
+                                            Part-time
+                                        </ListBox.Item>
+                                        <ListBox.Item id="contract" textValue="Contract" className="flex items-center justify-between p-2 rounded-md hover:bg-zinc-800 cursor-pointer text-sm text-zinc-200 outline-none data-[focused=true]:bg-zinc-800">
+                                            Contract
+                                        </ListBox.Item>
+                                        <ListBox.Item id="internship" textValue="Internship" className="flex items-center justify-between p-2 rounded-md hover:bg-zinc-800 cursor-pointer text-sm text-zinc-200 outline-none data-[focused=true]:bg-zinc-800">
+                                            Internship
+                                        </ListBox.Item>
+                                    </ListBox>
+                                </Select.Popover>
+                            </Select>
+
+                            {/* Salary Range */}
+                            <div className="grid grid-cols-3 gap-2">
+                                <div className="col-span-2 space-y-1">
+                                    <span className="text-zinc-400 font-medium text-sm block">Salary Range</span>
+                                    <div className="flex gap-2">
+                                        <TextField 
+                                            className="w-full"
+                                            isInvalid={!!errors.minSalary}
+                                        >
+                                            <Label className="sr-only">Minimum salary</Label>
+                                            <Input 
+                                                name="minSalary" 
+                                                placeholder="Min" 
+                                                type="number" 
+                                                className={textInputClass}
+                                            />
+                                            {errors.minSalary && <FieldError className="text-xs text-danger">{errors.minSalary}</FieldError>}
+                                        </TextField>
+                                        <TextField 
+                                            className="w-full"
+                                            isInvalid={!!errors.maxSalary}
+                                        >
+                                            <Label className="sr-only">Maximum salary</Label>
+                                            <Input 
+                                                name="maxSalary" 
+                                                placeholder="Max" 
+                                                type="number" 
+                                                className={textInputClass}
+                                            />
+                                            {errors.maxSalary && <FieldError className="text-xs text-danger">{errors.maxSalary}</FieldError>}
+                                        </TextField>
+                                    </div>
+                                </div>
+
+                                <Select 
+                                    className="w-full mt-6" 
+                                    name="currency" 
+                                    defaultSelectedKeys={["USD"]}
+                                    aria-label="Currency"
+                                >
+                                    <Select.Trigger className="w-full flex items-center justify-between bg-[#1c1c1e] border border-zinc-800 hover:bg-[#242426] h-12 rounded-lg px-3 text-white transition-all text-sm outline-none data-[focused=true]:border-zinc-600">
+                                        <Select.Value />
+                                        <Select.Indicator aria-hidden="true" />
+                                    </Select.Trigger>
+                                    <Select.Popover className="bg-[#1c1c1e] border border-zinc-800 text-white rounded-lg shadow-xl p-1">
+                                        <ListBox className="outline-none">
+                                            <ListBox.Item id="USD" textValue="USD ($)" className="flex items-center justify-between p-2 rounded-md hover:bg-zinc-800 cursor-pointer text-sm text-zinc-200 outline-none data-[focused=true]:bg-zinc-800">
+                                                USD ($)
+                                            </ListBox.Item>
+                                            <ListBox.Item id="EUR" textValue="EUR (€)" className="flex items-center justify-between p-2 rounded-md hover:bg-zinc-800 cursor-pointer text-sm text-zinc-200 outline-none data-[focused=true]:bg-zinc-800">
+                                                EUR (€)
+                                            </ListBox.Item>
+                                            <ListBox.Item id="GBP" textValue="GBP (£)" className="flex items-center justify-between p-2 rounded-md hover:bg-zinc-800 cursor-pointer text-sm text-zinc-200 outline-none data-[focused=true]:bg-zinc-800">
+                                                GBP (£)
+                                            </ListBox.Item>
+                                        </ListBox>
+                                    </Select.Popover>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-zinc-400 font-medium text-sm">Location</span>
+                                    <Switch
+                                        isSelected={isRemote}
+                                        onChange={setIsRemote}
+                                        size="sm"
+                                        className="flex items-center gap-2"
+                                    >
+                                        <Switch.Thumb />
+                                        <Label className="text-xs text-zinc-400 font-medium">Remote</Label>
+                                    </Switch>
+                                </div>
+
+                                <TextField 
+                                    className="flex flex-col gap-1 w-full relative"
+                                    isInvalid={!isRemote && !!errors.location}
+                                >
+                                    <Label className="sr-only">Location</Label>
+                                    <div className="relative flex items-center">
+                                        <Globe size={16} className="absolute left-3 text-zinc-600 pointer-events-none z-10" />
+                                        <Input
+                                            name="location"
+                                            placeholder={isRemote ? "Global / Remote" : "e.g. Austin, TX"}
+                                            disabled={isRemote}
+                                            className={`${textInputClass} pl-10`}
+                                        />
+                                    </div>
+                                    {!isRemote && errors.location && <FieldError className="text-xs text-danger mt-1">{errors.location}</FieldError>}
+                                </TextField>
+                            </div>
+
+                            <TextField 
+                                className="flex flex-col gap-1 w-full"
+                                isInvalid={!!errors.deadline}
+                            >
+                                <Label className="text-zinc-400 font-medium text-sm">Application Deadline</Label>
+                                <Input 
+                                    name="deadline" 
+                                    type="date" 
+                                    className={textInputClass}
+                                />
+                                {errors.deadline && <FieldError className="text-xs text-danger mt-1">{errors.deadline}</FieldError>}
+                            </TextField>
+                        </div>
+                    </Fieldset>
+
+                    {/*  Job Details */}
+                    <Fieldset className="space-y-6 w-full">
+                        <legend className="text-lg font-medium text-zinc-300 border-b border-zinc-900 w-full pb-2 mb-2">
+                            Job Details & Description
+                        </legend>
+
+                        <TextField 
+                            className="flex flex-col gap-1 w-full"
+                            isInvalid={!!errors.responsibilities}
+                        >
+                            <Label className="text-zinc-400 font-medium text-sm">Responsibilities</Label>
+                            <TextArea
+                                name="responsibilities"
+                                placeholder="Outline the core everyday responsibilities for this role..."
+                                rows={4}
+                                className={textAreaClass}
+                            />
+                            {errors.responsibilities && <FieldError className="text-xs text-danger mt-1">{errors.responsibilities}</FieldError>}
+                        </TextField>
+
+                        <TextField 
+                            className="flex flex-col gap-1 w-full"
+                            isInvalid={!!errors.requirements}
+                        >
+                            <Label className="text-zinc-400 font-medium text-sm">Requirements</Label>
+                            <TextArea
+                                name="requirements"
+                                placeholder="List required experience, skills, and certifications..."
+                                rows={4}
+                                className={textAreaClass}
+                            />
+                            {errors.requirements && <FieldError className="text-xs text-danger mt-1">{errors.requirements}</FieldError>}
+                        </TextField>
+
+                        <TextField className="flex flex-col gap-1 w-full">
+                            <Label className="text-zinc-400 font-medium text-sm">Benefits (Optional)</Label>
+                            <TextArea
+                                name="benefits"
+                                placeholder="Perks, healthcare, equity, remote stipends..."
+                                rows={3}
+                                className={textAreaClass}
+                            />
+                        </TextField>
+                    </Fieldset>
+
+                    {/* ফর্ম অ্যাকশন */}
+                    <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800 w-full">
+                        <Button
+                            type="button"
+                            variant="bordered"
+                            className="border-zinc-800 text-zinc-300 hover:bg-zinc-900 rounded-lg px-6 font-medium h-11"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            className="bg-white text-black font-semibold hover:bg-zinc-200 rounded-lg px-6 transition-colors h-11"
+                        >
+                            Post Job
+                        </Button>
+                    </div>
+                </Form>
+            </div>
         </div>
-
-        {/* Form Body */}
-        <form onSubmit={handleSubmit}>
-          <div className="p-6 space-y-5">
-            
-            {/* Row 1: Company Name & Industry */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-2">
-                  Company Name
-                </label>
-                <input
-                  required
-                  type="text"
-                  name="companyName"
-                  placeholder="e.g. Acme Corp"
-                  className="w-full rounded-lg border border-neutral-800 bg-[#1c1c1c] px-3.5 py-2.5 text-sm text-white placeholder-neutral-500 focus:border-neutral-600 focus:outline-none transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-2">
-                  Industry / Category
-                </label>
-                <select
-                  required
-                  name="industry"
-                  defaultValue="Technology"
-                  className="w-full rounded-lg border border-neutral-800 bg-[#1c1c1c] px-3.5 py-2.5 text-sm text-white focus:border-neutral-600 focus:outline-none transition-colors appearance-none cursor-pointer"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23a1a1aa'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'right 0.75rem center',
-                    backgroundSize: '1rem'
-                  }}
-                >
-                  <option value="Technology" className="bg-[#1c1c1c]">Technology</option>
-                  <option value="Software" className="bg-[#1c1c1c]">Software</option>
-                  <option value="Design" className="bg-[#1c1c1c]">Design</option>
-                  <option value="Marketing" className="bg-[#1c1c1c]">Marketing</option>
-                  <option value="Finance" className="bg-[#1c1c1c]">Finance</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Row 2: Website URL & Location Switch Toggle */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-2">
-                  Website URL
-                </label>
-                <div className="flex rounded-lg border border-neutral-800 bg-[#1c1c1c] overflow-hidden focus-within:border-neutral-600 transition-colors">
-                  <span className="inline-flex items-center px-3 text-xs text-neutral-500 bg-[#171717] border-r border-neutral-800">
-                    https://
-                  </span>
-                  <input
-                    type="text"
-                    name="website"
-                    placeholder="www.company.com"
-                    className="w-full bg-transparent px-3 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Location Switch Toggle Container */}
-              <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-2">
-                  Workplace Type
-                </label>
-                <div className="flex items-center justify-between rounded-lg border border-neutral-800 bg-[#1c1c1c] px-3.5 py-2 h-[42px]">
-                  <div className="flex items-center gap-2">
-                    <FiGlobe className={`w-4 h-4 ${isRemote ? "text-emerald-400" : "text-neutral-500"}`} />
-                    <span className="text-xs font-medium text-white">
-                      {isRemote ? "Global / Remote" : "On-site / Office"}
-                    </span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsRemote(!isRemote)}
-                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      isRemote ? "bg-emerald-500" : "bg-neutral-700"
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                        isRemote ? "translate-x-4" : "translate-x-0"
-                      }`}
-                    />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Row 3: Salary Range (Min, Max, Currency) */}
-            <div>
-              <label className="block text-xs font-medium text-neutral-300 mb-2">
-                Salary Range & Currency
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {/* Min Salary */}
-                <div className="relative">
-                  <FiDollarSign className="absolute left-3 top-3 text-neutral-500 w-4 h-4" />
-                  <input
-                    type="number"
-                    name="minSalary"
-                    placeholder="Min Salary (e.g. 3000)"
-                    className="w-full rounded-lg border border-neutral-800 bg-[#1c1c1c] pl-9 pr-3.5 py-2.5 text-sm text-white placeholder-neutral-500 focus:border-neutral-600 focus:outline-none transition-colors"
-                  />
-                </div>
-
-                {/* Max Salary */}
-                <div className="relative">
-                  <FiDollarSign className="absolute left-3 top-3 text-neutral-500 w-4 h-4" />
-                  <input
-                    type="number"
-                    name="maxSalary"
-                    placeholder="Max Salary (e.g. 5000)"
-                    className="w-full rounded-lg border border-neutral-800 bg-[#1c1c1c] pl-9 pr-3.5 py-2.5 text-sm text-white placeholder-neutral-500 focus:border-neutral-600 focus:outline-none transition-colors"
-                  />
-                </div>
-
-                {/* Currency Selector */}
-                <div>
-                  <select
-                    name="currency"
-                    defaultValue="USD"
-                    className="w-full rounded-lg border border-neutral-800 bg-[#1c1c1c] px-3.5 py-2.5 text-sm text-white focus:border-neutral-600 focus:outline-none transition-colors appearance-none cursor-pointer"
-                    style={{
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23a1a1aa'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: 'right 0.75rem center',
-                      backgroundSize: '1rem'
-                    }}
-                  >
-                    <option value="USD" className="bg-[#1c1c1c]">USD ($)</option>
-                    <option value="EUR" className="bg-[#1c1c1c]">EUR (€)</option>
-                    <option value="GBP" className="bg-[#1c1c1c]">GBP (£)</option>
-                    <option value="BDT" className="bg-[#1c1c1c]">BDT (৳)</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Row 4: Registration/Establishment Date & Employee Count */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-2">
-                  Establishment Date
-                </label>
-                <div className="relative">
-                  <FiCalendar className="absolute left-3 top-3 text-neutral-500 w-4 h-4" />
-                  <input
-                    type="date"
-                    name="establishmentDate"
-                    className="w-full rounded-lg border border-neutral-800 bg-[#1c1c1c] pl-9 pr-3.5 py-2.5 text-sm text-white placeholder-neutral-500 focus:border-neutral-600 focus:outline-none transition-colors [color-scheme:dark]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-2">
-                  Employee Count Range
-                </label>
-                <select
-                  name="employeeCount"
-                  defaultValue="1-10 employees"
-                  className="w-full rounded-lg border border-neutral-800 bg-[#1c1c1c] px-3.5 py-2.5 text-sm text-white focus:border-neutral-600 focus:outline-none transition-colors appearance-none cursor-pointer"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23a1a1aa'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'right 0.75rem center',
-                    backgroundSize: '1rem'
-                  }}
-                >
-                  <option value="1-10 employees" className="bg-[#1c1c1c]">1-10 employees</option>
-                  <option value="11-50 employees" className="bg-[#1c1c1c]">11-50 employees</option>
-                  <option value="51-200 employees" className="bg-[#1c1c1c]">51-200 employees</option>
-                  <option value="201-500 employees" className="bg-[#1c1c1c]">201-500 employees</option>
-                  <option value="500+ employees" className="bg-[#1c1c1c]">500+ employees</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Row 5: Company Logo */}
-            <div>
-              <label className="block text-xs font-medium text-neutral-300 mb-2">
-                Company Logo
-              </label>
-              <label className="flex items-center gap-3 p-2 rounded-lg border border-dashed border-neutral-700 bg-[#1c1c1c] hover:border-neutral-500 cursor-pointer transition-colors">
-                <div className="w-10 h-10 rounded-md bg-[#252525] flex items-center justify-center shrink-0 border border-neutral-700 overflow-hidden">
-                  {logoPreview ? (
-                    <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
-                  ) : (
-                    <FiUploadCloud className="w-5 h-5 text-neutral-400" />
-                  )}
-                </div>
-                <div className="overflow-hidden">
-                  <p className="text-xs font-medium text-white truncate">Upload image</p>
-                  <p className="text-[10px] text-neutral-500">PNG, JPG up to 5MB</p>
-                </div>
-                <input
-                  type="file"
-                  name="logo"
-                  accept="image/*"
-                  onChange={handleLogoChange}
-                  className="hidden"
-                />
-              </label>
-            </div>
-
-            {/* Row 6: Brief Description */}
-            <div>
-              <label className="block text-xs font-medium text-neutral-300 mb-2">
-                Brief Description
-              </label>
-              <textarea
-                name="description"
-                rows={3}
-                placeholder="Tell us about your company's mission and culture..."
-                className="w-full rounded-lg border border-neutral-800 bg-[#1c1c1c] p-3 text-sm text-white placeholder-neutral-500 focus:border-neutral-600 focus:outline-none transition-colors resize-none"
-              />
-            </div>
-
-          </div>
-
-          {/* Form Actions */}
-          <div className="flex items-center justify-end gap-3 border-t border-neutral-800 p-4 px-6 bg-[#121212]">
-            <button
-              type="button"
-              className="px-5 py-2 rounded-lg border border-neutral-800 bg-[#1c1c1c] text-xs font-medium text-neutral-300 hover:bg-[#252525] hover:text-white transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2 rounded-lg bg-white text-black text-xs font-semibold hover:bg-neutral-200 transition-colors cursor-pointer"
-            >
-              Post Jobs
-            </button>
-          </div>
-        </form>
-
-      </div>
-    </div>
-  );
+    );
 }
