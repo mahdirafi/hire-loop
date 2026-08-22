@@ -53,7 +53,7 @@ export default function Navbar() {
               <Briefcase width={20} height={20} className="text-white" />
             </span>
             <span className="text-xl font-bold tracking-tight text-black dark:text-white">
-              hire<span className="text-blue-600 dark:text-blue-500">loop</span>
+              Hire<span className="text-blue-600 dark:text-blue-500">Loop</span>
             </span>
           </Link>
 

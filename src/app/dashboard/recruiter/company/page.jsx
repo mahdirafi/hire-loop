@@ -1,7 +1,4 @@
- 
-import React from "react";
-
- 
+ import React from "react";
 
 const companyPage =   () => {
  
@@ -9,7 +6,6 @@ const companyPage =   () => {
     <div>
       <h2>Company Page</h2>
 
-       
     </div>
   );
 };
