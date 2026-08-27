@@ -1,6 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
-};
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'i.ibb.co',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
+  // ... অন্য কনফিগ অপশন
+}
 
-export default nextConfig;
+// 'module.exports' এর বদলে 'export default' ব্যবহার করুন
+export default nextConfig

@@ -1,18 +1,17 @@
 import React from 'react';
 import PostJobForm from './PostJobForm';
-import { getUserSession } from '@/lib/core/session';
-import { getRecruiterId } from '@/lib/action/companies';
+import { getLoggedInRecruiterCompany } from '@/lib/api/companies';
 
-const PostJobPage = async() =>{
+const PostJobPage = async () => {
 
-        const user = await getUserSession();
-        const company = await getRecruiterId(user?.id);
-        console.log("This is Company Session User", user,company);
+    const company = await getLoggedInRecruiterCompany();
+    
 
     return (
         <div>
-            <PostJobForm />
+            <PostJobForm company={company}></PostJobForm>
         </div>
-    )
-}
-export default PostJobPage
+    );
+};
+
+export default PostJobPage;

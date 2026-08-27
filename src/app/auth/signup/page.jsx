@@ -1,285 +1,188 @@
 "use client";
 
-import { useState, useEffect } from "react"; // useEffect যোগ করুন
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import {
-  Button,
-  Label,
-  RadioGroup,
-  Radio,
-} from "@heroui/react";
-import {
-  FiUser,
-  FiMail,
-  FiLock,
-  FiEye,
-  FiEyeOff,
-  FiAlertCircle,
-  FiCheckCircle,
-} from "react-icons/fi";
-import { authClient } from "@/lib/auth-client";
+import { useState } from "react";
+import { Card, Button, Link, TextField, Label, InputGroup, Input, FieldError } from "@heroui/react";
+import { Description, Radio, RadioGroup } from "@heroui/react";
 
-export default function SignUpPage() {
-  const router = useRouter();
+import { Eye, EyeSlash, Person, At, ShieldKeyhole } from "@gravity-ui/icons";
+import { signUp } from "@/lib/auth-client";
+import { useRouter, useSearchParams } from "next/navigation";
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    role: "seeker",
-  });
+export default function SignupPage() {
+    // Form fields
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [role, setRole] = useState("seeker");
 
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const redirectTo = searchParams.get("redirect") || "/";
 
-  const handleChange = (field) => (valueOrEvent) => {
-    const val =
-      valueOrEvent && valueOrEvent.target
-        ? valueOrEvent.target.value
-        : valueOrEvent;
+    // UI States
+    const [isVisible, setIsVisible] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
 
-    setFormData((prev) => ({ ...prev, [field]: val }));
-    setError("");
-    setSuccess("");
-  };
+    const toggleVisibility = () => setIsVisible(!isVisible);
 
-  // RadioGroup এর জন্য আলাদা হ্যান্ডলার
-  const handleRoleChange = (value) => {
-    setFormData(prev => ({ ...prev, role: value }));
-    setError("");
-    setSuccess("");
-  };
+    const handleSignup = async (e) => {
+        e.preventDefault();
 
-  const validateForm = () => {
-    const { name, email, password } = formData;
+        setError("");
+        setSuccess("");
+        setIsLoading(true);
 
-    if (!name.trim() || !email.trim() || !password) {
-      setError("Please fill in all fields.");
-      return false;
-    }
+        const plan = role === 'seeker' ? 'seeker_free' : 'recruiter_free';
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address.");
-      return false;
-    }
+        try {
+            const { data, error: authError } = await signUp.email({
+                email,
+                password,
+                name,
+                role,
+                plan
+            });
 
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters long.");
-      return false;
-    }
+            if (authError) {
+                setError(authError.message || "Something went wrong during signup.");
+            } else {
+                setSuccess("Account created successfully! Welcome.");
+                setName("");
+                setEmail("");
+                setPassword("");
+                router.push(redirectTo);
+            }
+        } catch (err) {
+            setError("An unexpected network error occurred.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-    if (!/[A-Z]/.test(password)) {
-      setError("Password must contain at least one uppercase letter (A-Z).");
-      return false;
-    }
+    return (
+        <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-4">
+            <Card className="w-full max-w-md p-6 shadow-sm border border-zinc-200 dark:border-zinc-800">
 
-    if (!/[0-9]/.test(password)) {
-      setError("Password must contain at least one number (0-9).");
-      return false;
-    }
+                {/* Header Container */}
+                <div className="flex flex-col items-center justify-center gap-1 pb-6 border-b border-zinc-100 dark:border-zinc-800 mb-6 text-center">
+                    <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">Create an account</h1>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400">Fill in the fields below to get started</p>
+                </div>
 
-    return true;
-  };
+                {/* Form Body */}
+                <form onSubmit={handleSignup} className="flex flex-col gap-5">
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
+                    {/* Name Field */}
+                    <TextField isRequired name="name" className="flex flex-col gap-1.5">
+                        <Label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Name</Label>
+                        <InputGroup className="flex items-center gap-2 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 bg-zinc-50 dark:bg-zinc-900 focus-within:border-primary transition-colors">
+                            <Person className="text-zinc-400 pointer-events-none" size={16} />
+                            <Input
+                                type="text"
+                                placeholder="Enter your full name"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                className="w-full bg-transparent py-2 text-sm outline-none border-none text-zinc-900 dark:text-zinc-100"
+                            />
+                        </InputGroup>
+                    </TextField>
 
-    if (!validateForm()) return;
+                    {/* Email Field */}
+                    <TextField isRequired name="email" type="email" className="flex flex-col gap-1.5">
+                        <Label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Email Address</Label>
+                        <InputGroup className="flex items-center gap-2 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 bg-zinc-50 dark:bg-zinc-900 focus-within:border-primary transition-colors">
+                            <At className="text-zinc-400 pointer-events-none" size={16} />
+                            <Input
+                                placeholder="you@example.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="w-full bg-transparent py-2 text-sm outline-none border-none text-zinc-900 dark:text-zinc-100"
+                            />
+                        </InputGroup>
+                    </TextField>
 
-    setLoading(true);
+                    {/* Password Field */}
+                    <TextField isRequired name="password" className="flex flex-col gap-1.5">
+                        <Label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Password</Label>
+                        <InputGroup className="flex items-center gap-2 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 bg-zinc-50 dark:bg-zinc-900 focus-within:border-primary transition-colors">
+                            <ShieldKeyhole className="text-zinc-400 pointer-events-none" size={16} />
+                            <Input
+                                type={isVisible ? "text" : "password"}
+                                placeholder="Choose a password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="w-full bg-transparent py-2 text-sm outline-none border-none text-zinc-900 dark:text-zinc-100"
+                            />
+                            <button
+                                className="focus:outline-none text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition"
+                                type="button"
+                                onClick={toggleVisibility}
+                                aria-label="toggle password visibility"
+                            >
+                                {isVisible ? <EyeSlash size={18} /> : <Eye size={18} />}
+                            </button>
+                        </InputGroup>
+                    </TextField>
 
-    try {
-      const { error: authError } = await authClient.signUp.email({
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        role: formData.role,
-      });
+                    {/* Role Selection */}
+                    <div className="flex flex-col gap-4">
+                        <Label>Subscription plan</Label>
+                        <RadioGroup defaultValue="seeker" name="role" onChange = {value => setRole(value)} orientation="horizontal">
+                            <Radio value="seeker">
+                                <Radio.Control>
+                                    <Radio.Indicator />
+                                </Radio.Control>
+                                <Radio.Content>
+                                    <Label>Job Seeker</Label>
+                                </Radio.Content>
+                            </Radio>
+                            <Radio value="recruiter">
+                                <Radio.Control>
+                                    <Radio.Indicator />
+                                </Radio.Control>
+                                <Radio.Content>
+                                    <Label>Recruiter</Label>
+                                </Radio.Content>
+                            </Radio>
+                        </RadioGroup>
+                    </div>
 
-      if (authError) {
-        setError(authError.message || "Sign up failed. Please try again.");
-        return;
-      }
+                    {/* Dynamic Status Badges */}
+                    {error && (
+                        <div className="p-3.5 text-xs font-medium rounded-xl bg-red-100/60 dark:bg-red-950/50 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900">
+                            <span className="font-semibold">Error:</span> {error}
+                        </div>
+                    )}
 
-      setSuccess("Account created successfully! Redirecting...");
-      setFormData({ name: "", email: "", password: "", role: "seeker" });
+                    {success && (
+                        <div className="p-3.5 text-xs font-medium rounded-xl bg-emerald-100/60 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900">
+                            <span className="font-semibold">Success:</span> {success}
+                        </div>
+                    )}
 
-      setTimeout(() => {
-        router.push("/");
-      }, 1500);
-    } catch (err) {
-      console.error("Sign up error:", err);
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+                    {/* Action Button */}
+                    <Button
+                        type="submit"
+                        color="primary"
+                        className="w-full font-semibold rounded-xl text-sm h-12"
+                        isLoading={isLoading}
+                        isDisabled={isLoading}
+                    >
+                        Sign Up
+                    </Button>
 
-  return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-black text-white">
-      <div className="w-full max-w-md">
-        <div className="!bg-zinc-950 rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.8)] border border-zinc-800 p-8">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-white">
-              Create an Account
-            </h1>
-            <p className="text-sm text-zinc-400 mt-2">
-              Enter your details below to get started
-            </p>
-          </div>
+                    {/* Navigation Option */}
+                    <div className="text-center pt-4 border-t border-zinc-100 dark:border-zinc-800 mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                        Already have an account?{" "}
+                        <Link href={`/auth/signin?redirect=${redirectTo}    `} className="font-medium cursor-pointer text-sm text-blue-600 dark:text-blue-400">
+                            Sign in instead
+                        </Link>
+                    </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="flex items-start gap-2 mb-5 px-4 py-3 rounded-xl bg-red-950/50 border border-red-800/80 text-red-400 text-sm">
-              <FiAlertCircle className="mt-0.5 shrink-0" size={16} />
-              <span>{error}</span>
-            </div>
-          )}
-
-          {/* Success Message */}
-          {success && (
-            <div className="flex items-start gap-2 mb-5 px-4 py-3 rounded-xl bg-green-950/50 border border-green-800/80 text-green-400 text-sm">
-              <FiCheckCircle className="mt-0.5 shrink-0" size={16} />
-              <span>{success}</span>
-            </div>
-          )}
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {/* Name */}
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-sm text-zinc-300">Name</Label>
-              <div className="!bg-zinc-900 rounded-xl border border-zinc-800 focus-within:!border-blue-500 flex items-center transition-colors">
-                <span className="text-zinc-500 pl-3">
-                  <FiUser size={16} />
-                </span>
-                <input
-                  type="text"
-                  placeholder="Your full name"
-                  value={formData.name}
-                  onChange={handleChange("name")}
-                  disabled={loading}
-                  className="w-full text-white placeholder:text-zinc-500 bg-transparent px-3 py-2.5 outline-none"
-                />
-              </div>
-            </div>
-
-            {/* Email */}
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-sm text-zinc-300">Email</Label>
-              <div className="!bg-zinc-900 rounded-xl border border-zinc-800 focus-within:!border-blue-500 flex items-center transition-colors">
-                <span className="text-zinc-500 pl-3">
-                  <FiMail size={16} />
-                </span>
-                <input
-                  type="email"
-                  placeholder="you@example.com"
-                  value={formData.email}
-                  onChange={handleChange("email")}
-                  disabled={loading}
-                  className="w-full text-white placeholder:text-zinc-500 bg-transparent px-3 py-2.5 outline-none"
-                />
-              </div>
-            </div>
-
-            {/* Password */}
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-sm text-zinc-300">Password</Label>
-              <div className="!bg-zinc-900 rounded-xl border border-zinc-800 focus-within:!border-blue-500 flex items-center transition-colors">
-                <span className="text-zinc-500 pl-3">
-                  <FiLock size={16} />
-                </span>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Min 8 chars, 1 uppercase, 1 number"
-                  value={formData.password}
-                  onChange={handleChange("password")}
-                  disabled={loading}
-                  className="w-full text-white placeholder:text-zinc-500 bg-transparent px-3 py-2.5 outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="text-zinc-500 hover:text-zinc-300 focus:outline-none pr-3 transition-colors"
-                  tabIndex={-1}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
-                </button>
-              </div>
-            </div>
-
-            {/* Role Selection - FIXED */}
-            <div className="flex flex-col gap-2">
-              <div className="flex gap-4">
-  <label className="flex items-center gap-2">
-    <input
-      type="radio"
-      name="role"
-      value="seeker"
-      checked={formData.role === "seeker"}
-      onChange={(e) => handleRoleChange(e.target.value)}
-      disabled={loading}
-      className="w-4 h-4"
-    />
-    Job Seeker
-  </label>
-  <label className="flex items-center gap-2">
-    <input
-      type="radio"
-      name="role"
-      value="recruiter"
-      checked={formData.role === "recruiter"}
-      onChange={(e) => handleRoleChange(e.target.value)}
-      disabled={loading}
-      className="w-4 h-4"
-    />
-    Recruiter
-  </label>
-</div>
-            </div>
-
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              isDisabled={loading}
-              className="w-full !bg-blue-600 hover:!bg-blue-500 text-white font-medium mt-2 shadow-[0_2px_12px_rgba(37,99,235,0.4)] justify-center py-3 rounded-lg border-none transition-all duration-200"
-            >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Processing...
-                </span>
-              ) : (
-                "Sign Up"
-              )}
-            </Button>
-          </form>
-
-          {/* Back to Sign In */}
-          <div className="text-center mt-6 pt-6 border-t border-zinc-800">
-            <p className="text-sm text-zinc-400">
-              Already have an account?{" "}
-              <Link
-                href="/auth/signin"
-                className="text-blue-400 font-medium hover:underline hover:text-blue-300 transition-colors"
-              >
-                Sign In
-              </Link>
-            </p>
-          </div>
+                </form>
+            </Card>
         </div>
-      </div>
-    </div>
-  );
+    );
 }

@@ -2,11 +2,20 @@
 
 import React, { useState } from 'react';
 import { 
-    Form, Fieldset,TextField,TextArea,Label,Input,FieldError,Select,ListBox,Button,toast
+    Form, 
+    Fieldset, 
+    TextField, 
+    TextArea, 
+    Label, 
+    Input, 
+    FieldError, 
+    Select, 
+    ListBox, 
+    Button, 
+    toast
 } from '@heroui/react';
 import { ArrowUpToLine, Globe, Factory, ArrowRight, Pencil, ChevronDown } from '@gravity-ui/icons';
- 
- 
+import { createCompany } from '@/lib/actions/companies';
 
 // Layout Shared Style Constants matching your design image
 const textInputClass = "w-full bg-zinc-900/50 border border-zinc-800 text-white rounded-lg px-3 py-2.5 outline-none placeholder:text-zinc-600 focus:border-zinc-700 transition";
@@ -21,7 +30,6 @@ export default function CompanyProfile({ recruiter, recruiterCompany }) {
     const [company, setCompany] = useState(recruiterCompany); // Keeps null initially to showcase empty template structure
     const [isEditing, setIsEditing] = useState(false);
     const [errors, setErrors] = useState({});
-    const [isSubmitting, setIsSubmitting] = useState(false);
     
     // Auxiliary Upload States
     const [logoUrl, setLogoUrl] = useState('');
@@ -87,7 +95,7 @@ export default function CompanyProfile({ recruiter, recruiterCompany }) {
             return;
         }
 
-        // Build the payload to send to backend
+        // Commit state updates
         const newCompanyData = {
             name: companyName,
             websiteUrl,
@@ -97,32 +105,22 @@ export default function CompanyProfile({ recruiter, recruiterCompany }) {
             description,
             logo: logoUrl || (company ? company.logo : ''),
             status: company ? company.status : 'Pending', // Retains status if updating profile details
-            recruiterId: recruiter?.id // Associate company with the current recruiter
-        };
-
-        console.log("NewCompanyData" , newCompanyData);
-
-        try {
-            setIsSubmitting(true);
-
-            const payload = await createCompany(newCompanyData);
-
-            if (payload?.insertedId) {
-                // ✅ FIX: _id সহ company state আপডেট করা হচ্ছে,
-                // তাই সাবমিটের পর সঠিকভাবে Dashboard view দেখাবে
-                setCompany({ ...newCompanyData, _id: payload.insertedId });
-                toast.success("Company profile created successfully!");
-                setErrors({});
-                setIsEditing(false);
-            } else {
-                toast.error("Something went wrong. Please try again.");
-            }
-        } catch (err) {
-            console.error("Failed to submit company profile:", err);
-            toast.error("Failed to save company profile.");
-        } finally {
-            setIsSubmitting(false);
+            recruiterId: recruiter.id // Associate company with the current recruiter
         }
+        setCompany(newCompanyData);
+
+        console.log("Submitted Company Profile Data:", newCompanyData);
+
+        const payload = await createCompany(newCompanyData);
+
+        if(payload.insertedId) {
+
+            toast.success("Company profile created successfully!");
+        }
+
+
+        setErrors({});
+        setIsEditing(false);
     };
 
     // 4. State Toggle helper triggers
@@ -268,7 +266,7 @@ export default function CompanyProfile({ recruiter, recruiterCompany }) {
 
                     {/* ROW 2: Website URL + Location */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <TextField name="websiteUrl" defaultValue={company?.websiteUrl || ''} isInvalid={!!errors.websiteUrl} className="flex flex-col gap-1 w-full">
+                        <TextField name="websiteUrl" defaultValue={company?.websiteUrl || ''} Linda isInvalid={!!errors.websiteUrl} className="flex flex-col gap-1 w-full">
                             <Label className="text-zinc-400 font-medium text-sm">Website URL</Label>
                             <div className="relative flex items-center">
                                 <span className="absolute left-3 text-zinc-600 text-sm font-medium select-none pointer-events-none border-r border-zinc-800 pr-2">
@@ -360,10 +358,9 @@ export default function CompanyProfile({ recruiter, recruiterCompany }) {
                     )}
                     <Button
                         type="submit"
-                        isDisabled={isSubmitting}
-                        className="bg-white text-black font-semibold hover:bg-zinc-200 rounded-lg px-6 transition-colors h-11 disabled:opacity-60"
+                        className="bg-white text-black font-semibold hover:bg-zinc-200 rounded-lg px-6 transition-colors h-11"
                     >
-                        {isSubmitting ? 'Saving...' : (company ? 'Save Updates' : 'Complete Setup')}
+                        {company ? 'Save Updates' : 'Complete Setup'}
                     </Button>
                 </div>
             </Form>
