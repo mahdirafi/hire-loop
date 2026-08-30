@@ -1,5 +1,6 @@
 "use client" ;
 
+
 import React from 'react';
 import { useSession, signOut } from "@/lib/auth-client";
 import { FiBriefcase, FiUsers, FiZap, FiCheckCircle } from "react-icons/fi";

@@ -1,12 +1,9 @@
 'use client';
 import React, { useState } from 'react';
-// Hero UI Components (v3.1.0 atomic anatomy)
 import { Form, Button, TextField, Label, Input, Description, FieldError } from '@heroui/react';
-// Gravity UI Icons for a polished look
 import { ArrowRight, Link, FileText, LayoutHeaderCells } from '@gravity-ui/icons';
 import { submitApplication } from '@/lib/actions/applications';
  
-
 
 const JobApply = ({ job, applicant }) => {
     
@@ -38,6 +35,7 @@ const JobApply = ({ job, applicant }) => {
             applicantId: applicant?.id,
             applicantName: applicant?.name,
             applicantEmail: applicant?.email,
+            status: 'applied',
             ...formData
         };
 

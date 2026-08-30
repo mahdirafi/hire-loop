@@ -1,12 +1,10 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import NavBer from "./components/NavBer";
 import Footer from "./components/Footer";
 import { Toaster } from "react-hot-toast";
+import NavBar from "./components/NavBar";
  
  
-
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -31,7 +29,7 @@ export default function RootLayout({ children }) {
     >
       <body suppressHydrationWarning className="min-h-full flex flex-col">
 
-        <NavBer/>
+        <NavBar />
         <main>
         {children}
         </main>

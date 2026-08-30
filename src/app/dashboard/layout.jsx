@@ -1,11 +1,12 @@
 import React from 'react';
-import { DashboardSlidber } from '../components/dashboard/DashboardSlidber';
+import { DashboardSidebar } from '../components/dashboard/DashboardSidebar';
+
  
 
 const DashboardLayout = ({ children}) => { 
     return (
         <div className="flex min-h-screen ">
-            <DashboardSlidber/>
+            <DashboardSidebar />
             <div className="flex-1 px-4">{children}</div>
             
         </div>

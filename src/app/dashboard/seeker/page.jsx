@@ -1,6 +1,7 @@
+ 
 import React from 'react';
 
-const JobSeekerPage = () => {
+const Seeker = () => {
     return (
         <div>
             <h1>This is Job Seeker Page</h1>
@@ -8,4 +9,4 @@ const JobSeekerPage = () => {
     );
 };
 
-export default JobSeekerPage;
+export default Seeker;

@@ -1,0 +1,22 @@
+export const dynamic = 'force-dynamic';
+import { getApplicationsByApplicant } from '@/lib/api/applications';
+import { getUserSession } from '@/lib/core/session';
+import React from 'react';
+import ApplicationsTable from './ApplicationsTable';
+import { redirect } from 'next/navigation';
+
+
+const ApplicationsPage = async() => {
+    const user = await getUserSession();
+      if (!user) {
+        redirect('/auth/signin');
+    }
+    const jobs = await getApplicationsByApplicant(user.id)
+    return (
+        <div>
+            <ApplicationsTable jobs={jobs} />
+        </div>
+    );
+};
+
+export default ApplicationsPage;

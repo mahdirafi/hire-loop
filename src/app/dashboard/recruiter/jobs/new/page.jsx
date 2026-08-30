@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import React from 'react';
 import PostJobForm from './PostJobForm';
 import { getLoggedInRecruiterCompany } from '@/lib/api/companies';
